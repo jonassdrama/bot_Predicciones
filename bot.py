@@ -11,8 +11,10 @@ TOKEN = "7939507064:AAGvU-qUNAIEwHHF14X6Vuvw-5uRFigjCTg"
 # 🔹 Cargar credenciales de Google Sheets desde Render
 import json
 
-with open("credentials.json", "r") as file:
-    creds_json = json.load(file)
+import json
+import os
+
+creds_json = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
 
 # 🔹 Conectar con Google Sheets
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
