@@ -9,9 +9,10 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 TOKEN = "7939507064:AAGvU-qUNAIEwHHF14X6Vuvw-5uRFigjCTg"
 
 # 🔹 Cargar credenciales de Google Sheets desde Render
-creds_json = json.loads(os.getenv("GOOGLE_CREDENTIALS"))
-with open("credentials.json", "w") as creds_file:
-    json.dump(creds_json, creds_file)
+import json
+
+with open("credentials.json", "r") as file:
+    creds_json = json.load(file)
 
 # 🔹 Conectar con Google Sheets
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
