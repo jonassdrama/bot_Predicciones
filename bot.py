@@ -39,8 +39,7 @@ async def recibir_prediccion(update: Update, context: CallbackContext) -> None:
         partes = texto.split("-")
         
         if len(partes) != 2:
-            await update.message.reply_text("⚠️ Formato incorrecto. Usa: 'Equipo1 X - Equipo2 
-Y'")
+            await update.message.reply_text("⚠️ Formato incorrecto. Usa: 'Equipo1 X - Equipo Y'")
             return
         
         equipo1 = partes[0].strip()
