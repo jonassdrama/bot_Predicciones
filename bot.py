@@ -10,14 +10,25 @@ async def recibir_prediccion(update: Update, context: CallbackContext) -> None:
     texto = update.message.text
     await update.message.reply_text(f"Recibí tu pronóstico: {texto}. ¡Suerte!")
 
+import os
+
 def main():
     app = Application.builder().token(TOKEN).build()
-    
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, recibir_prediccion))
 
-    print("Bot iniciado...")
-    app.run_polling()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, 
+recibir_prediccion))
+
+    print("🤖 Bot en marcha con Webhooks...")
+
+    PORT = int(os.environ.get("PORT", 5000))
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,
+        
+webhook_url=f"https://{os.environ.get('RENDER_EXTERNAL_HOSTNAME')}/{TOKEN}"
+    )
 
 if __name__ == "__main__":
     main()
