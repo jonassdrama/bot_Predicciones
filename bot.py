@@ -62,11 +62,11 @@ async def enviar(update: Update, context: CallbackContext) -> None:
 
 # 🔹 Enviar un video manualmente a un usuario desde Telegram
 async def enviar_video(update: Update, context: CallbackContext) -> None:
-    if not context.args:
+    chat_id = context.args[0] if context.args else None
+
+    if not chat_id:
         await update.message.reply_text("⚠️ Uso correcto: `/enviarvideo ID` (luego adjunta el video)")
         return
-
-    chat_id = context.args[0]  # ID del usuario al que enviar el video
 
     # Verificar si el mensaje tiene un video adjunto
     if not update.message.video:
@@ -87,31 +87,26 @@ async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
     user_id = update.message.chat.id
     username = update.message.chat.username or f"ID: {user_id}"
 
-    # Si el usuario envía un video
     if update.message.video:
         video = update.message.video.file_id
         caption = f"📩 *Nuevo video de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
         await context.bot.send_video(chat_id=ADMIN_ID, video=video, caption=caption, parse_mode="Markdown")
 
-    # Si el usuario envía una foto
     elif update.message.photo:
-        photo = update.message.photo[-1].file_id  # Tomamos la última (mayor calidad)
+        photo = update.message.photo[-1].file_id
         caption = f"📩 *Nueva foto de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
         await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo, caption=caption, parse_mode="Markdown")
 
-    # Si el usuario envía un documento (PDF, TXT, etc.)
     elif update.message.document:
         document = update.message.document.file_id
         caption = f"📩 *Nuevo documento de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
         await context.bot.send_document(chat_id=ADMIN_ID, document=document, caption=caption, parse_mode="Markdown")
 
-    # Si el usuario envía un mensaje de voz
     elif update.message.voice:
         voice = update.message.voice.file_id
         caption = f"📩 *Nuevo mensaje de voz de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
         await context.bot.send_voice(chat_id=ADMIN_ID, voice=voice, caption=caption, parse_mode="Markdown")
 
-    # Si el usuario envía solo texto
     elif update.message.text:
         mensaje = update.message.text
         mensaje_admin = f"📩 *Nueva respuesta de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}\n💬 Mensaje: {mensaje}"
@@ -145,6 +140,7 @@ def main():
     app.add_handler(CommandHandler("enviarvideo", enviar_video))  # 🔹 AÑADIDO
     app.add_handler(CommandHandler("responder", responder))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reenviar_respuesta))
+    app.add_handler(MessageHandler(filters.VIDEO, reenviar_respuesta))  # 🔹 Para recibir videos
 
     print("🤖 Bot en marcha con Webhooks...")
 
@@ -159,3 +155,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
