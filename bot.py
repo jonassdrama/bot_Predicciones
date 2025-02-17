@@ -102,9 +102,9 @@ async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
         photo = update.message.photo[-1].file_id
         await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo, caption="📩 Nueva foto recibida.")
 
-    elif update.message.document:
-        document = update.message.document.file_id
-        await context.bot.send_document(chat_id=ADMIN_ID, document=document, caption="📩 Nuevo documento recibido.")
+    elif update.message.attachment:
+        document = update.message.attachment.file_id
+        await context.bot.send_document(chat_id=ADMIN_ID, document=document, caption="📩 Nuevo archivo recibido.")
 
     elif update.message.voice:
         voice = update.message.voice.file_id
@@ -140,7 +140,7 @@ def main():
     app.add_handler(MessageHandler(filters.VIDEO, recibir_video))  # 🔹 Capturar videos adjuntos
     app.add_handler(CommandHandler("responder", responder))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reenviar_respuesta))
-    app.add_handler(MessageHandler(filters.VIDEO | filters.PHOTO | filters.DOCUMENT | filters.VOICE, reenviar_respuesta))
+    app.add_handler(MessageHandler(filters.VIDEO | filters.PHOTO | filters.ATTACHMENT | filters.VOICE, reenviar_respuesta))  # 🔹 REEMPLAZADO `DOCUMENT` POR `ATTACHMENT`
 
     print("🤖 Bot en marcha con Webhooks...")
 
