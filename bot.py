@@ -56,31 +56,38 @@ async def enviar(update: Update, context: CallbackContext) -> None:
 
     try:
         await context.bot.send_message(chat_id=chat_id, text=mensaje)
-        await update.message.reply_text(f"✅ Mensaje enviado a {chat_id}.")
+        await update.message.reply_text("✅ Mensaje enviado correctamente.")
     except Exception as e:
         await update.message.reply_text(f"❌ Error al enviar mensaje: {e}")
 
-# 🔹 Enviar un video manualmente a un usuario desde Telegram
+# 🔹 Iniciar el envío de un video manualmente a un usuario
 async def enviar_video(update: Update, context: CallbackContext) -> None:
-    chat_id = context.args[0] if context.args else None
-
-    if not chat_id:
+    if not context.args:
         await update.message.reply_text("⚠️ Uso correcto: `/enviarvideo ID` (luego adjunta el video)")
         return
 
-    # Verificar si el mensaje tiene un video adjunto
-    if not update.message.video:
-        await update.message.reply_text("⚠️ Por favor, adjunta un video al enviar el comando.")
+    chat_id = context.args[0]  # ID del usuario al que enviar el video
+    context.user_data["video_destino"] = chat_id  # Guardamos el destinatario temporalmente
+
+    await update.message.reply_text("📹 Ahora adjunta el video para enviarlo.")
+
+# 🔹 Capturar el video adjunto y enviarlo al usuario correcto
+async def recibir_video(update: Update, context: CallbackContext) -> None:
+    chat_id = context.user_data.get("video_destino")  # Obtener destinatario
+
+    if not chat_id:
+        await update.message.reply_text("⚠️ Primero usa `/enviarvideo ID` antes de adjuntar un video.")
         return
 
-    video = update.message.video.file_id
-    caption = " ".join(context.args[1:]) if len(context.args) > 1 else ""
+    video = update.message.video.file_id  # Obtener el ID del video
 
     try:
-        await context.bot.send_video(chat_id=chat_id, video=video, caption=caption)
-        await update.message.reply_text(f"✅ Video enviado a {chat_id}.")
+        await context.bot.send_video(chat_id=chat_id, video=video, caption="🎥 Video enviado.")
+        await update.message.reply_text("✅ Video enviado correctamente.")
     except Exception as e:
         await update.message.reply_text(f"❌ Error al enviar el video: {e}")
+
+    del context.user_data["video_destino"]  # Limpiar el destinatario después del envío
 
 # 🔹 Reenviar respuestas de los usuarios al admin (incluye videos, fotos y documentos)
 async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
@@ -89,31 +96,23 @@ async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
 
     if update.message.video:
         video = update.message.video.file_id
-        caption = f"📩 *Nuevo video de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
-        await context.bot.send_video(chat_id=ADMIN_ID, video=video, caption=caption, parse_mode="Markdown")
+        await context.bot.send_video(chat_id=ADMIN_ID, video=video, caption="📩 Nuevo video recibido.")
 
     elif update.message.photo:
         photo = update.message.photo[-1].file_id
-        caption = f"📩 *Nueva foto de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
-        await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo, caption=caption, parse_mode="Markdown")
+        await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo, caption="📩 Nueva foto recibida.")
 
     elif update.message.document:
         document = update.message.document.file_id
-        caption = f"📩 *Nuevo documento de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
-        await context.bot.send_document(chat_id=ADMIN_ID, document=document, caption=caption, parse_mode="Markdown")
+        await context.bot.send_document(chat_id=ADMIN_ID, document=document, caption="📩 Nuevo documento recibido.")
 
     elif update.message.voice:
         voice = update.message.voice.file_id
-        caption = f"📩 *Nuevo mensaje de voz de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
-        await context.bot.send_voice(chat_id=ADMIN_ID, voice=voice, caption=caption, parse_mode="Markdown")
+        await context.bot.send_voice(chat_id=ADMIN_ID, voice=voice, caption="📩 Nuevo mensaje de voz recibido.")
 
     elif update.message.text:
         mensaje = update.message.text
-        mensaje_admin = f"📩 *Nueva respuesta de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}\n💬 Mensaje: {mensaje}"
-        await context.bot.send_message(chat_id=ADMIN_ID, text=mensaje_admin, parse_mode="Markdown")
-
-    else:
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"⚠️ Usuario {username} (ID: {user_id}) envió un tipo de archivo no soportado.")
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"📩 Nuevo mensaje recibido:\n{mensaje}")
 
 # 🔹 Responder al usuario desde el bot
 async def responder(update: Update, context: CallbackContext) -> None:
@@ -126,7 +125,7 @@ async def responder(update: Update, context: CallbackContext) -> None:
 
     try:
         await context.bot.send_message(chat_id=chat_id, text=mensaje)
-        await update.message.reply_text(f"✅ Respuesta enviada a {chat_id}.")
+        await update.message.reply_text("✅ Respuesta enviada correctamente.")
     except Exception as e:
         await update.message.reply_text(f"❌ Error al enviar respuesta: {e}")
 
@@ -137,10 +136,11 @@ def main():
     # Manejar comandos y mensajes
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("enviar", enviar))
-    app.add_handler(CommandHandler("enviarvideo", enviar_video))  # 🔹 AÑADIDO
+    app.add_handler(CommandHandler("enviarvideo", enviar_video))
+    app.add_handler(MessageHandler(filters.VIDEO, recibir_video))  # 🔹 Capturar videos adjuntos
     app.add_handler(CommandHandler("responder", responder))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reenviar_respuesta))
-    app.add_handler(MessageHandler(filters.VIDEO, reenviar_respuesta))  # 🔹 Para recibir videos
+    app.add_handler(MessageHandler(filters.VIDEO | filters.PHOTO | filters.DOCUMENT | filters.VOICE, reenviar_respuesta))
 
     print("🤖 Bot en marcha con Webhooks...")
 
@@ -155,4 +155,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
