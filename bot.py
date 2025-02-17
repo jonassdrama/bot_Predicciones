@@ -59,7 +59,7 @@ async def enviar(update: Update, context: CallbackContext) -> None:
 # 🔹 Enviar un video manualmente a un usuario
 async def enviar_video(update: Update, context: CallbackContext) -> None:
     if len(context.args) < 1:
-        await update.message.reply_text("⚠️ Uso correcto: `/enviarvideo ID` (luego adjunta el video)")
+        await update.message.reply_text("⚠️ Uso correcto: `/enviarvideo ID` (responde a un video)")
         return
 
     chat_id = context.args[0]
@@ -138,7 +138,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, guardar_en_sheets))
     app.add_handler(MessageHandler(filters.VIDEO, reenviar_respuesta))
     app.add_handler(MessageHandler(filters.PHOTO, reenviar_respuesta))
-    app.add_handler(MessageHandler(filters.DOCUMENT, reenviar_respuesta))
+    app.add_handler(MessageHandler(filters.ATTACHMENT, reenviar_respuesta))  # 🔹 FIX: Reemplazado `DOCUMENT`
     app.add_handler(MessageHandler(filters.VOICE, reenviar_respuesta))
 
     print("🤖 Bot en marcha con Webhooks...")
@@ -154,9 +154,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
