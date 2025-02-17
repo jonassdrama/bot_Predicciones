@@ -61,18 +61,43 @@ async def enviar(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text(f"❌ Error al enviar mensaje: {e}")
 
 # 🔹 Reenviar respuestas de los usuarios al admin
+# 🔹 Reenviar respuestas de los usuarios al admin (incluye videos, fotos y documentos)
 async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
     user_id = update.message.chat.id
     username = update.message.chat.username or f"ID: {user_id}"
-    mensaje = update.message.text
 
-    # Enviar mensaje al admin
-    mensaje_admin = f"📩 *Nueva respuesta de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}\n💬 Mensaje: {mensaje}"
-    
-    try:
+    # Si el usuario envía un video
+    if update.message.video:
+        video = update.message.video.file_id
+        caption = f"📩 *Nuevo video de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
+        await context.bot.send_video(chat_id=ADMIN_ID, video=video, caption=caption, parse_mode="Markdown")
+
+    # Si el usuario envía una foto
+    elif update.message.photo:
+        photo = update.message.photo[-1].file_id  # Tomamos la última (mayor calidad)
+        caption = f"📩 *Nueva foto de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
+        await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo, caption=caption, parse_mode="Markdown")
+
+    # Si el usuario envía un documento (PDF, TXT, etc.)
+    elif update.message.document:
+        document = update.message.document.file_id
+        caption = f"📩 *Nuevo documento de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
+        await context.bot.send_document(chat_id=ADMIN_ID, document=document, caption=caption, parse_mode="Markdown")
+
+    # Si el usuario envía un mensaje de voz
+    elif update.message.voice:
+        voice = update.message.voice.file_id
+        caption = f"📩 *Nuevo mensaje de voz de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
+        await context.bot.send_voice(chat_id=ADMIN_ID, voice=voice, caption=caption, parse_mode="Markdown")
+
+    # Si el usuario envía solo texto
+    elif update.message.text:
+        mensaje = update.message.text
+        mensaje_admin = f"📩 *Nueva respuesta de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}\n💬 Mensaje: {mensaje}"
         await context.bot.send_message(chat_id=ADMIN_ID, text=mensaje_admin, parse_mode="Markdown")
-    except Exception as e:
-        print(f"❌ Error al reenviar mensaje al admin: {e}")
+
+    else:
+        await context.bot.send_message(chat_id=ADMIN_ID, text=f"⚠️ Usuario {username} (ID: {user_id}) envió un tipo de archivo no soportado.")
 
 # 🔹 Responder al usuario desde el bot
 async def responder(update: Update, context: CallbackContext) -> None:
