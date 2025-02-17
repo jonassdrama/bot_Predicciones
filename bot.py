@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 # 🔹 TOKEN del bot de Telegram
 TOKEN = "7939507064:AAGvU-qUNAIEwHHF14X6Vuvw-5uRFigjCTg"
-ADMIN_ID = 1570729026 # ⚠️ REEMPLAZA con tu ID de Telegram
+ADMIN_ID = 1570729026  # ⚠️ REEMPLAZA con tu ID de Telegram
 
 # 🔹 Autenticación con Google Sheets usando variable de entorno
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -52,7 +52,7 @@ async def enviar(update: Update, context: CallbackContext) -> None:
         return
 
     chat_id = context.args[0]
-    mensaje = " ".join(context.args[1:])  
+    mensaje = " ".join(context.args[1:])
 
     try:
         await context.bot.send_message(chat_id=chat_id, text=mensaje)
@@ -60,7 +60,28 @@ async def enviar(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         await update.message.reply_text(f"❌ Error al enviar mensaje: {e}")
 
-# 🔹 Reenviar respuestas de los usuarios al admin
+# 🔹 Enviar un video manualmente a un usuario desde Telegram
+async def enviar_video(update: Update, context: CallbackContext) -> None:
+    if not context.args:
+        await update.message.reply_text("⚠️ Uso correcto: `/enviarvideo ID` (luego adjunta el video)")
+        return
+
+    chat_id = context.args[0]  # ID del usuario al que enviar el video
+
+    # Verificar si el mensaje tiene un video adjunto
+    if not update.message.video:
+        await update.message.reply_text("⚠️ Por favor, adjunta un video al enviar el comando.")
+        return
+
+    video = update.message.video.file_id
+    caption = " ".join(context.args[1:]) if len(context.args) > 1 else ""
+
+    try:
+        await context.bot.send_video(chat_id=chat_id, video=video, caption=caption)
+        await update.message.reply_text(f"✅ Video enviado a {chat_id}.")
+    except Exception as e:
+        await update.message.reply_text(f"❌ Error al enviar el video: {e}")
+
 # 🔹 Reenviar respuestas de los usuarios al admin (incluye videos, fotos y documentos)
 async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
     user_id = update.message.chat.id
@@ -121,6 +142,7 @@ def main():
     # Manejar comandos y mensajes
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("enviar", enviar))
+    app.add_handler(CommandHandler("enviarvideo", enviar_video))  # 🔹 AÑADIDO
     app.add_handler(CommandHandler("responder", responder))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reenviar_respuesta))
 
@@ -137,5 +159,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
