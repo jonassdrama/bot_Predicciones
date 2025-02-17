@@ -7,7 +7,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 # 🔹 TOKEN del bot de Telegram
 TOKEN = "7939507064:AAGvU-qUNAIEwHHF14X6Vuvw-5uRFigjCTg"
-ADMIN_ID = 123456789  # ⚠️ REEMPLAZA con tu ID de Telegram
+ADMIN_ID = 1570729026 # ⚠️ REEMPLAZA con tu ID de Telegram
 
 # 🔹 Autenticación con Google Sheets usando variable de entorno
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
