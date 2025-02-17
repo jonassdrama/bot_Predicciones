@@ -60,59 +60,17 @@ async def enviar(update: Update, context: CallbackContext) -> None:
     except Exception as e:
         await update.message.reply_text(f"❌ Error al enviar mensaje: {e}")
 
-# 🔹 Iniciar el envío de un video manualmente a un usuario
-async def enviar_video(update: Update, context: CallbackContext) -> None:
-    if not context.args:
-        await update.message.reply_text("⚠️ Uso correcto: `/enviarvideo ID` (luego adjunta el video)")
-        return
-
-    chat_id = context.args[0]  # ID del usuario al que enviar el video
-    context.user_data["video_destino"] = chat_id  # Guardamos el destinatario temporalmente
-
-    await update.message.reply_text("📹 Ahora adjunta el video para enviarlo.")
-
-# 🔹 Capturar el video adjunto y enviarlo al usuario correcto
-async def recibir_video(update: Update, context: CallbackContext) -> None:
-    chat_id = context.user_data.get("video_destino")  # Obtener destinatario
-
-    if not chat_id:
-        await update.message.reply_text("⚠️ Primero usa `/enviarvideo ID` antes de adjuntar un video.")
-        return
-
-    video = update.message.video.file_id  # Obtener el ID del video
-
-    try:
-        await context.bot.send_video(chat_id=chat_id, video=video, caption="🎥 Video enviado.")
-        await update.message.reply_text("✅ Video enviado correctamente.")
-    except Exception as e:
-        await update.message.reply_text(f"❌ Error al enviar el video: {e}")
-
-    del context.user_data["video_destino"]  # Limpiar el destinatario después del envío
-
-# 🔹 Reenviar respuestas de los usuarios al admin (incluye videos, fotos y documentos)
+# 🔹 Reenviar respuestas de los usuarios al admin (SOLO mensajes que NO sean predicciones)
 async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
     user_id = update.message.chat.id
     username = update.message.chat.username or f"ID: {user_id}"
+    mensaje = update.message.text
 
-    if update.message.video:
-        video = update.message.video.file_id
-        await context.bot.send_video(chat_id=ADMIN_ID, video=video, caption="📩 Nuevo video recibido.")
+    # Si el mensaje es una predicción, NO lo reenviamos al admin
+    if " - " in mensaje:
+        return
 
-    elif update.message.photo:
-        photo = update.message.photo[-1].file_id
-        await context.bot.send_photo(chat_id=ADMIN_ID, photo=photo, caption="📩 Nueva foto recibida.")
-
-    elif update.message.document:  # 🔹 FIX: Manejo correcto de documentos
-        document = update.message.document.file_id
-        await context.bot.send_document(chat_id=ADMIN_ID, document=document, caption="📩 Nuevo archivo recibido.")
-
-    elif update.message.voice:
-        voice = update.message.voice.file_id
-        await context.bot.send_voice(chat_id=ADMIN_ID, voice=voice, caption="📩 Nuevo mensaje de voz recibido.")
-
-    elif update.message.text:
-        mensaje = update.message.text
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"📩 Nuevo mensaje recibido:\n{mensaje}")
+    await context.bot.send_message(chat_id=ADMIN_ID, text=f"📩 Nuevo mensaje recibido de {username} (ID: {user_id}):\n{mensaje}")
 
 # 🔹 Responder al usuario desde el bot
 async def responder(update: Update, context: CallbackContext) -> None:
@@ -136,11 +94,9 @@ def main():
     # Manejar comandos y mensajes
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("enviar", enviar))
-    app.add_handler(CommandHandler("enviarvideo", enviar_video))
-    app.add_handler(MessageHandler(filters.VIDEO, recibir_video))  # 🔹 Capturar videos adjuntos
     app.add_handler(CommandHandler("responder", responder))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reenviar_respuesta))
-    app.add_handler(MessageHandler(filters.VIDEO | filters.PHOTO | filters.ATTACHMENT | filters.VOICE, reenviar_respuesta))  # 🔹 FIX: Removido `filters.DOCUMENT`
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, guardar_en_sheets))  # 🔹 SOLO predicciones
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reenviar_respuesta))  # 🔹 SOLO mensajes normales
 
     print("🤖 Bot en marcha con Webhooks...")
 
@@ -155,6 +111,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
