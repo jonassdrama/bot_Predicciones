@@ -64,7 +64,7 @@ async def enviar_video(update: Update, context: CallbackContext) -> None:
 
     chat_id = context.args[0]
 
-    # Verificar si el mensaje tiene un video adjunto
+    # Si el admin responde a un video con /enviarvideo, lo enviamos al usuario correcto
     if update.message.reply_to_message and update.message.reply_to_message.video:
         video = update.message.reply_to_message.video.file_id
         caption = " ".join(context.args[1:]) if len(context.args) > 1 else ""
@@ -77,12 +77,15 @@ async def enviar_video(update: Update, context: CallbackContext) -> None:
     else:
         await update.message.reply_text("⚠️ Responde a un video con `/enviarvideo ID` para enviarlo.")
 
-# 🔹 Reenviar respuestas de los usuarios al admin
+# 🔹 Reenviar respuestas de los usuarios al admin (pero ignorar los videos que envía el admin)
 async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
     user_id = update.message.chat.id
     username = update.message.chat.username or f"ID: {user_id}"
 
-    # Si el usuario envía un video
+    # ❗ Evitar que los videos del admin se reenvíen a sí mismo
+    if user_id == ADMIN_ID:
+        return  
+
     if update.message.video:
         video = update.message.video.file_id
         caption = f"📩 *Nuevo video de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}"
@@ -107,9 +110,6 @@ async def reenviar_respuesta(update: Update, context: CallbackContext) -> None:
         mensaje = update.message.text
         mensaje_admin = f"📩 *Nueva respuesta de un usuario*\n👤 Usuario: {username}\n🆔 ID: {user_id}\n💬 Mensaje: {mensaje}"
         await context.bot.send_message(chat_id=ADMIN_ID, text=mensaje_admin, parse_mode="Markdown")
-
-    else:
-        await context.bot.send_message(chat_id=ADMIN_ID, text=f"⚠️ Usuario {username} (ID: {user_id}) envió un tipo de archivo no soportado.")
 
 # 🔹 Responder al usuario desde el bot
 async def responder(update: Update, context: CallbackContext) -> None:
@@ -138,7 +138,7 @@ def main():
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, guardar_en_sheets))
     app.add_handler(MessageHandler(filters.VIDEO, reenviar_respuesta))
     app.add_handler(MessageHandler(filters.PHOTO, reenviar_respuesta))
-    app.add_handler(MessageHandler(filters.ATTACHMENT, reenviar_respuesta))  # 🔹 FIX: Reemplazado `DOCUMENT`
+    app.add_handler(MessageHandler(filters.ATTACHMENT, reenviar_respuesta))
     app.add_handler(MessageHandler(filters.VOICE, reenviar_respuesta))
 
     print("🤖 Bot en marcha con Webhooks...")
@@ -154,3 +154,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
